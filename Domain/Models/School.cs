@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace ODataWithoutEF.Models
+namespace Domain.Models
 {
     public class School
     {
         public Guid Id { get; set; }
         public String Name { get; set; }
+
+        public override string ToString() => $"[id:{Id}]{Name}";
     }
 }

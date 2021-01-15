@@ -1,37 +1,38 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Domain.Models;
+using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OData.Edm;
+using Newtonsoft.Json;
 
 namespace ODataWithoutEF
 {
-    public class Startup
+    public sealed record Startup(IConfiguration Configuration)
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
-        public IConfiguration Configuration { get; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services
+               .AddMvc(o => o.EnableEndpointRouting = false)
+               .AddNewtonsoftJson(opt =>
+                {
+                    opt.SerializerSettings.Formatting = Formatting.Indented;
+                })
+               .AddJsonOptions(opt =>
+                {
+                    opt.JsonSerializerOptions.WriteIndented = true;
+                });
+
+            //services.For;
+
             services.AddOData();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -39,16 +40,39 @@ namespace ODataWithoutEF
             }
             else
             {
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
-            app.UseMvc(builder =>
+            app.UseRouting();
+
+            app.UseEndpoints(builder =>
             {
                 builder.EnableDependencyInjection();
-                builder.Expand().Select().OrderBy();
+                builder.Expand().Select().OrderBy().Count().Filter().MaxTop(null);
+                builder.MapODataRoute("odata", "odata", BuildModel(app.ApplicationServices));
+
+                static IEdmModel BuildModel(IServiceProvider services)
+                {
+                    var model_builder = new ODataConventionModelBuilder(services);
+                    model_builder.EntitySet<Student>("Students");
+                    return model_builder.GetEdmModel();
+                }
             });
+
+            //app.UseMvc(builder =>
+            //{
+            //    builder.EnableDependencyInjection();
+            //    builder.Expand().Select().OrderBy().Count().Filter().MaxTop(null);
+            //    //builder.MapO
+            //    builder.MapODataServiceRoute("odata", "odata", BuildModel(app.ApplicationServices));
+
+            //    static IEdmModel BuildModel(IServiceProvider services)
+            //    {
+            //        var model_builder = new ODataConventionModelBuilder(services);
+            //        model_builder.EntitySet<Student>("Students");
+            //        return model_builder.GetEdmModel();
+            //    }
+            //});
         }
     }
 }

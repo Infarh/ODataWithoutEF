@@ -2,19 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Domain.Models;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Mvc;
-using ODataWithoutEF.Models;
 
 namespace ODataWithoutEF.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     public class StudentsController : ControllerBase
     {
         // GET api/values
         [HttpGet]
-        [EnableQuery()]
+        [EnableQuery]
         public ActionResult<IEnumerable<Student>> Get()
         {
             return new List<Student>
